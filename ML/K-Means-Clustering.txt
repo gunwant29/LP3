@@ -1,0 +1,57 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
+from sklearn.metrics import silhouette_score
+
+df = pd.read_csv("sales_data_sample.csv", encoding="latin1")
+print(df.head())
+
+# Select numeric features (change indices or column names as needed)
+X = df.iloc[:, [3, 4]].values
+mask = ~np.isnan(X).any(axis=1)
+X = X[mask]
+df = df.loc[mask].reset_index(drop=True)
+
+scaler = StandardScaler()
+scaled_X = scaler.fit_transform(X)
+
+# Elbow and silhouette methods
+wcss, sil_scores = [], []
+K_range = range(1, 11)
+for k in K_range:
+    kmeans = KMeans(n_clusters=k, init="k-means++", random_state=42, n_init=10)
+    kmeans.fit(scaled_X)
+    wcss.append(kmeans.inertia_)
+    sil_scores.append(silhouette_score(scaled_X, kmeans.labels_) if k > 1 else np.nan)
+
+plt.figure(figsize=(12, 4))
+plt.subplot(1, 2, 1)
+plt.plot(K_range, wcss, 'bx-')
+plt.title("Elbow Method")
+plt.xlabel("k"); plt.ylabel("WCSS"); plt.grid(True)
+
+plt.subplot(1, 2, 2)
+plt.plot(K_range, sil_scores, 'ro-')
+plt.title("Silhouette Score")
+plt.xlabel("k"); plt.ylabel("Score"); plt.grid(True)
+plt.tight_layout(); plt.show()
+
+optimal_k = 3  # choose based on plots
+kmeans = KMeans(n_clusters=optimal_k, init="k-means++", random_state=42, n_init=10)
+labels = kmeans.fit_predict(scaled_X)
+df['Cluster'] = labels
+
+pca = PCA(n_components=2, random_state=42)
+proj = pca.fit_transform(scaled_X)
+plt.figure(figsize=(8, 6))
+plt.scatter(proj[:, 0], proj[:, 1], c=labels, cmap='viridis', s=50)
+plt.title(f"K-Means Clustering (k={optimal_k})")
+plt.xlabel("PC1"); plt.ylabel("PC2")
+plt.colorbar(label='Cluster'); plt.grid(True); plt.show()
+
+centers_original = scaler.inverse_transform(kmeans.cluster_centers_)
+print("\nCluster centers (original scale):")
+print(pd.DataFrame(centers_original))

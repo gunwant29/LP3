@@ -1,0 +1,54 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract StudentData {
+    struct Student {
+        uint ID;
+        string fName;
+        string lName;
+        uint[2] marks;
+    }
+
+    address public owner;
+    uint public stdCount = 0;
+    mapping(uint => Student) public stdRecords;
+
+    modifier onlyOwner() {
+        require(owner == msg.sender, "Only the owner can add records");
+        _;
+    }
+
+    constructor() {
+        owner = msg.sender;
+    }
+
+    function addNewRecord(
+        uint _ID,
+        string memory _fName,
+        string memory _lName,
+        uint[2] memory _marks
+    ) public onlyOwner {
+        require(stdRecords[_ID].ID == 0, "Student already exists");
+        stdRecords[_ID] = Student(_ID, _fName, _lName, _marks);
+        stdCount++;
+    }
+
+    function getStudent(uint _ID)
+        public
+        view
+        returns (uint, string memory, string memory, uint[2] memory)
+    {
+        Student memory s = stdRecords[_ID];
+        require(s.ID != 0, "Student not found");
+        return (s.ID, s.fName, s.lName, s.marks);
+    }
+
+    // Fallback and Receive functions
+    fallback() external payable {
+        revert("Fallback: contract does not accept Ether");
+    }
+
+    receive() external payable {
+        revert("Receive: contract does not accept Ether");
+    }
+}

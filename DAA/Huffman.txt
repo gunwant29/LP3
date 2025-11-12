@@ -1,0 +1,62 @@
+import java.util.*;
+
+class Node {
+    char ch;
+    int freq;
+    Node left, right;
+    Node(char ch, int freq) { this.ch = ch; this.freq = freq; }
+}
+
+ class Huffman {
+    // Build Huffman Tree using a min-heap (priority queue)
+    static Node buildTree(Map<Character, Integer> freqMap) {
+        PriorityQueue<Node> pq = new PriorityQueue<>(Comparator.comparingInt(n -> n.freq));
+        for (var e : freqMap.entrySet()) pq.add(new Node(e.getKey(), e.getValue()));
+        if (pq.isEmpty()) return null;
+        while (pq.size() > 1) {
+            Node l = pq.poll();
+            Node r = pq.poll();
+            Node p = new Node('-', l.freq + r.freq); // internal node
+            p.left = l; p.right = r;
+            pq.add(p);
+        }
+        return pq.poll();
+    }
+
+    // Generate codes by traversing tree (assign "0"/"1"); handle single-char case
+    static void generateCodes(Node root, String code, Map<Character, String> map) {
+        if (root == null) return;
+        if (root.left == null && root.right == null) {
+            map.put(root.ch, code.isEmpty() ? "0" : code); // single distinct char -> "0"
+            return;
+        }
+        generateCodes(root.left, code + "0", map);
+        generateCodes(root.right, code + "1", map);
+    }
+
+    public static void main(String[] args) {
+        String text = "bhavesh"; // change input here for testing
+
+        // 1) Frequency count
+        Map<Character, Integer> freqMap = new HashMap<>();
+        for (char c : text.toCharArray())
+            freqMap.put(c, freqMap.getOrDefault(c, 0) + 1);
+
+        // 2) Build tree and 3) Generate codes
+        Node root = buildTree(freqMap);
+        Map<Character, String> codes = new HashMap<>();
+        generateCodes(root, "", codes);
+
+        // 4) Encode
+        StringBuilder encoded = new StringBuilder();
+        for (char c : text.toCharArray()) encoded.append(codes.get(c));
+
+        // Print results (clear output for practical)
+        System.out.println("Original: " + text);
+        System.out.println("Huffman Codes:");
+        for (var e : codes.entrySet()) System.out.println(e.getKey() + " : " + e.getValue());
+        System.out.println("Encoded: " + encoded.toString());
+        // Complexity note (for viva):
+        // Time: O(n + k log k), Space: O(n + k)
+    }
+}
